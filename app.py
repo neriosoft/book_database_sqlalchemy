@@ -28,6 +28,24 @@ def menu():
             \rPress enter to try again!
             ''')
 
+def submenu():
+    while True:
+        print('''
+          \r1) Edit
+          \r2) Delete
+          \r3) Return to Main menu''')
+
+        choice = input('What would you like to do? ')  
+        if choice in ['1', '2', '3']:
+            return choice
+
+        else:
+            input('''
+            \rPlease choose one of the options above.
+            \rA number from 1 - 3
+            \rPress enter to try again!
+            ''')
+
 
 def app():
     app_running = True
@@ -83,10 +101,38 @@ def app():
             \n{the_book.tile} by {the_book.author}
             \rPublished: {the_book.published_date}
             \rPrice: ${the_book.price / 100}''')
-            input('\nPress enter to return to the main menu')
+
+            sub_choice = submenu()
+            if sub_choice == '1':
+                #edit
+                the_book.title = edit_check('Title', the_book.title)
+                the_book.author = edit_check('Author', the_book.author)
+                the_book.published_date = edit_check('Date',  the_book.published_date )
+                the_book.price = edit_check('Price',  the_book.price )
+                session.commit()
+                print('Book Updated!')
+                time.sleep(1.5)
+
+            elif sub_choice == '2':
+                #delete
+                session.delete(the_book)
+                session.commit()
+                print('Book Deleted!')
+            
         elif choice == '4':
             #book analysis
-            pass
+            oldest_book = session.query(Book).order_by(Book.published_date).first()
+            newest_book = session.query(Book).order_by(Book.published_date.desc()).first()
+            total_books = session.query(Book).count()
+            python_books_count = session.query(Book).filter(Book.title.like('%Python%'))
+
+            print(f'''
+            \n******BOOK ANALYSIS******
+            \rOldest Books: {oldest_book}
+            \rNewest Books: {newest_book}
+            \rTotal Books: {total_books}
+            \rTotal Number of Python Books: {python_books_count}''')
+            input('\nPress Enter to return to the main menu.')
 
         else:
             print('Goodbye!!!')
@@ -108,7 +154,7 @@ def clean_date(date_str):
         \rThe date format should include a valid Month, Day, year from the past.
         \rEx: january 11, 2014.
         \rPress ENTER to try again
-        *********************************''')
+        \r*********************************''')
 
         return
     else:
@@ -125,7 +171,7 @@ def clean_price(price_str):
         \rThe price should be a number without the currency symbol.
         \rEx: 35.23.
         \rPress ENTER to try again
-        *********************************''')
+        \r*********************************''')
 
     else:
         return int(price_float * 100)
@@ -139,7 +185,7 @@ def clean_id(id_str, options):
         \n********* ID Error ***********
         \rThe ID should be a number.
         \rPress ENTER to try again
-        *********************************''')
+        \r*********************************''')
         return
     else:
         if book_id in options:
@@ -149,8 +195,33 @@ def clean_id(id_str, options):
              \n********* ID Error ***********
              \rOption {options}.
              \rPress ENTER to try again
-        *********************************''')
+        \r*********************************''')
             return
+
+def edit_check(column_name, current_value):
+    print(f'\n**** EDIT {column_name} ****')
+    if column_name == 'Price':
+        print(f'\rCurrent Value: {current_value / 100}')
+    elif column_name == 'Date':
+        print(f'\rCurrent Value: {current_value.strftime("%B %d, %Y")}')
+    else:
+        print(f'\rCurrent Value: {current_value}')
+
+    
+    if column_name == 'Date' or column_name == 'Price':
+        while True:
+            changes = input('What would you like to change the value to? ')
+            if column_name == 'Date':
+                changes = clean_date(changes)
+                if type(changes) == datetime.date:
+                    return changes
+            elif column_name == 'Price':        
+                changes = clean_price(changes)
+                if type(changes) == int:
+                    return changes
+    else:
+        return input('What would you like to change the value to? ')
+
 
 
 def add_csv():
